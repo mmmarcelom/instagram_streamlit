@@ -3,14 +3,14 @@ from PIL import Image
 import pandas as pd
 import os
 
-# Configuração da página com meta tag para mobile
+# Configuração da página
 st.set_page_config(
     page_title="Encontro ALI Produtividade",
     layout="wide",
     page_icon="📸"
 )
 
-# Aplicar CSS personalizado com media queries para mobile
+# Aplicar CSS personalizado
 st.markdown(
     """
     <style>
@@ -28,69 +28,93 @@ st.markdown(
         color: var(--text-color);
     }
     
-    /* Espaço maior abaixo da barra de pesquisa */
-    .search-spacer {
-        margin-bottom: 2rem !important;
-        padding-bottom: 1.5rem !important;
+    .search-container {
+        margin-bottom: 1rem !important;
     }
     
-    /* Ajustes gerais para mobile */
+    /* Layout para mobile */
     @media (max-width: 768px) {
-        /* Reduz padding e margens */
-        .main .block-container {
-            padding: 1rem 1rem 0.5rem;
+        .desktop-view {
+            display: none !important;
         }
         
-        /* Ajusta tamanho dos títulos */
+        .mobile-view {
+            display: block !important;
+        }
+        
+        .main .block-container {
+            padding: 0.5rem 0.5rem 0.25rem;
+        }
+        
         h1 {
             font-size: 1.5rem !important;
+            margin-bottom: 0.5rem !important;
         }
         
         h3 {
             font-size: 1.2rem !important;
+            margin-bottom: 0.5rem !important;
         }
         
-        /* Barra de pesquisa ocupando toda largura */
         .stTextInput>div>div>input {
             width: 100% !important;
+            margin-bottom: 0.5rem !important;
         }
         
-        /* Espaço menor em mobile */
-        .search-spacer {
-            margin-bottom: 1.5rem !important;
-            padding-bottom: 1rem !important;
+        .mobile-profile {
+            width: 100% !important;
+            max-width: 180px !important;
+            margin: 0.5rem auto !important;
+            padding: 0 !important;
+        }
+        
+        .mobile-image {
+            max-width: 150px !important;
+            height: auto !important;
+        }
+        
+        .mobile-spacing {
+            margin-bottom: 1rem !important;
         }
     }
     
-    .stTextInput>div>div>input {
-        background-color: white;
-        color: var(--text-color);
-        border: 1px solid var(--border-color);
+    /* Layout para desktop */
+    @media (min-width: 769px) {
+        .mobile-view {
+            display: none !important;
+        }
+        
+        .desktop-view {
+            display: block !important;
+        }
+        
+        .desktop-columns {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .desktop-profile {
+            text-align: center;
+        }
+        
+        .desktop-image {
+            max-width: 120px !important;
+            height: auto !important;
+        }
     }
     
-    .css-1aumxhk {
-        background-color: var(--secondary-background-color);
-    }
-    
-    .st-b7, .st-c0 {
-        color: var(--text-color);
-    }
-    
-    .stMarkdown a {
-        color: var(--link-color) !important;
-    }
-    
-    .stWarning, .stError {
-        color: #000000;
-    }
-    
-    /* Imagens responsivas */
     .clickable-image {
         transition: transform 0.2s;
         cursor: pointer;
         border: 2px solid var(--border-color);
-        max-width: 100%;
-        height: auto;
+        width: 100%;
+        aspect-ratio: 1/1;
+        object-fit: cover;
+        border-radius: 8px;
+        margin: 0 auto;
+        display: block;
     }
     
     .clickable-image:hover {
@@ -102,45 +126,17 @@ st.markdown(
     .company-name {
         color: var(--text-color);
         font-weight: 500;
-        margin-top: 8px;
+        margin-top: 0.5rem;
         font-size: 0.9rem;
+        text-align: center;
         word-break: break-word;
     }
     
-    /* Rodapé mobile */
     .author-credit {
         text-align: center;
-        margin-top: 20px;
+        margin-top: 1rem;
         font-size: 0.75rem;
         color: #777777;
-        padding-bottom: 10px;
-    }
-    
-    .author-credit a {
-        color: #777777 !important;
-        text-decoration: none;
-    }
-    
-    .author-credit a:hover {
-        color: #555555 !important;
-        text-decoration: underline;
-    }
-    
-    /* Grid responsivo - 2 colunas em mobile */
-    @media (max-width: 768px) {
-        .responsive-column {
-            width: 48% !important;
-            margin: 1% !important;
-            float: left !important;
-            box-sizing: border-box !important;
-        }
-        
-        /* Limpar floats */
-        .row::after {
-            content: "";
-            display: table;
-            clear: both;
-        }
     }
     </style>
     """,
@@ -149,75 +145,84 @@ st.markdown(
 
 # Título do aplicativo
 st.title("Encontro ALI Produtividade")
-st.markdown("<h3 style='color: var(--text-color);'>Perfis de Empresas no Instagram</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='color: var(--text-color); margin-bottom: 1rem;'>Perfis de Empresas no Instagram</h3>", unsafe_allow_html=True)
 
-# Carregar dados do CSV
+# Carregar dados
 @st.cache_data
 def carregar_dados():
     return pd.read_csv("dados_perfis.csv")
 
-# Função para converter imagem para base64
 def image_to_base64(image):
     from io import BytesIO
     import base64
-    
     buffered = BytesIO()
     image.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode()
 
 try:
     perfis_df = carregar_dados()
-    # Adicionar barra de pesquisa com container para espaçamento
+    
+    # Barra de pesquisa
     with st.container():
+        st.markdown('<div class="search-container">', unsafe_allow_html=True)
         termo_pesquisa = st.text_input("Pesquisar empresa...")
-        # Div para criar espaço abaixo da barra de pesquisa
-        st.markdown('<div class="search-spacer"></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     
     if termo_pesquisa:
         perfis_df = perfis_df[perfis_df['nome'].str.contains(termo_pesquisa, case=False)]
     
-    # Layout responsivo - 4 colunas em desktop, 2 em mobile
-    colunas_por_linha = 4
-    
-    # Usar container para melhor controle em mobile
-    container = st.container()
-    
-    # Exibir cada perfil
-    for i, row in perfis_df.iterrows():
-        # Nova linha a cada 4 itens (desktop) ou 2 itens (mobile via CSS)
-        if i % colunas_por_linha == 0:
-            cols = container.columns(colunas_por_linha)
-        
-        with cols[i % colunas_por_linha]:
-            try:
-                imagem = Image.open('./perfis/' + row["imagem"])
-                
-                st.markdown(
-                    f"""
-                    <div class="responsive-column">
-                        <div style='text-align: center; margin-bottom: 15px;'>
+    if len(perfis_df) == 0:
+        st.info("Nenhuma empresa encontrada com o termo de pesquisa.")
+    else:
+        # Verificar o tamanho da tela e mostrar apenas uma visualização
+        if st.session_state.get('is_mobile', False):
+            # Layout para mobile
+            for _, row in perfis_df.iterrows():
+                with st.container():
+                    st.markdown('<div class="mobile-profile mobile-spacing">', unsafe_allow_html=True)
+                    try:
+                        imagem = Image.open('./perfis/' + row["imagem"])
+                        st.markdown(
+                            f"""
                             <a href='{row['link']}' target='_blank'>
                                 <img src='data:image/png;base64,{image_to_base64(imagem)}' 
                                      alt='{row["nome"]}' 
-                                     style='width: 100%; max-width: 150px; height: auto; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px;'
-                                     class='clickable-image'>
+                                     class='clickable-image mobile-image'>
                             </a>
                             <p class='company-name'>{row["nome"]}</p>
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-                
-            except FileNotFoundError:
-                st.warning(f"Imagem não encontrada para {row['nome']}, {row['imagem']}")
-            except Exception as e:
-                st.error(f"Erro ao carregar {row['nome']}: {str(e)}")
+                            """,
+                            unsafe_allow_html=True
+                        )
+                    except Exception as e:
+                        st.error(f"Erro ao carregar {row['nome']}")
+                    st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            # Layout para desktop
+            cols = st.columns(4)
+            for idx, (_, row) in enumerate(perfis_df.iterrows()):
+                with cols[idx % 4]:
+                    try:
+                        imagem = Image.open('./perfis/' + row["imagem"])
+                        st.markdown(
+                            f"""
+                            <div class="desktop-profile">
+                                <a href='{row['link']}' target='_blank'>
+                                    <img src='data:image/png;base64,{image_to_base64(imagem)}' 
+                                         alt='{row["nome"]}' 
+                                         class='clickable-image desktop-image'>
+                                </a>
+                                <p class='company-name'>{row["nome"]}</p>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                    except Exception as e:
+                        st.error(f"Erro ao carregar {row['nome']}")
 
 except FileNotFoundError:
-    st.error("Arquivo de perfis não encontrado. Por favor, verifique se 'dados_perfis.csv' existe.")
+    st.error("Arquivo de perfis não encontrado. Verifique se 'dados_perfis.csv' existe.")
 
-# Créditos do autor (discreto no final)
+# Créditos
 st.markdown(
     """
     <div class='author-credit'>
@@ -226,3 +231,15 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+# Detectar se é mobile (simplificado)
+st.session_state.is_mobile = st.session_state.get('is_mobile', False)
+if not st.session_state.is_mobile:
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        ctx = get_script_run_ctx()
+        if ctx and hasattr(ctx, 'request'):
+            user_agent = ctx.request.headers.get('User-Agent', '').lower()
+            st.session_state.is_mobile = any(m in user_agent for m in ['mobile', 'android', 'iphone'])
+    except:
+        pass
