@@ -202,7 +202,7 @@ try:
             for idx, (_, row) in enumerate(perfis_df.iterrows()):
                 with cols[idx % 4]:
                     try:
-                        imagem = Image.open('./perfis/' + row["imagem"])
+                        imagem = Image.open('./perfis/' + row["usuario"]+'.jpg')
                         st.markdown(
                             f"""
                             <div class="desktop-profile">
