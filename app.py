@@ -181,7 +181,7 @@ try:
                 with st.container():
                     st.markdown('<div class="mobile-profile mobile-spacing">', unsafe_allow_html=True)
                     try:
-                        imagem = Image.open('./perfis/' + row["imagem"])
+                        imagem = Image.open('./perfis/' + row["usuario"]+'.jpg')
                         st.markdown(
                             f"""
                             <a href='{row['link']}' target='_blank'>
