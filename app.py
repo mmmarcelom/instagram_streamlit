@@ -10,7 +10,7 @@ def image_to_base64(image):
     from io import BytesIO
     import base64
     buffered = BytesIO()
-    image.save(buffered, format="PNG")
+    image.save(buffered, format="JPEG", quality=95)
     return base64.b64encode(buffered.getvalue()).decode()
 
 def load_mobile(perfis_df):
@@ -20,12 +20,16 @@ def load_mobile(perfis_df):
             arquivo = './perfis/' + row["instagram"]+'.jpg'
             try:
                 imagem = Image.open(arquivo)
+                max_size = (300, 300)
+                imagem.thumbnail(max_size, Image.Resampling.LANCZOS)
+                
                 st.markdown(
                     f"""
                     <a href='{row['url']}' target='_blank'>
-                        <img src='data:image/png;base64,{image_to_base64(imagem)}' 
+                        <img src='data:image/jpeg;base64,{image_to_base64(imagem)}' 
                                 alt='{row["nome"]}' 
-                                class='clickable-image mobile-image'>
+                                class='clickable-image mobile-image'
+                                loading="lazy">
                     </a>
                     <p class='company-name'>{row["nome"]}</p>
                     """,
@@ -112,16 +116,18 @@ st.markdown(
             margin-bottom: 0.5rem !important;
         }
         
-        .mobile-profile {
+        .mobile-image {
             width: 100% !important;
-            max-width: 180px !important;
-            margin: 0.5rem auto !important;
-            padding: 0 !important;
+            max-width: 100% !important;
+            height: auto !important;
+            aspect-ratio: 1/1;
         }
         
-        .mobile-image {
-            max-width: 150px !important;
-            height: auto !important;
+        .mobile-profile {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0.5rem auto !important;
+            padding: 0 5% !important;
         }
         
         .mobile-spacing {
