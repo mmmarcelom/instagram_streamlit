@@ -1,14 +1,65 @@
 import streamlit as st
 from PIL import Image
 import pandas as pd
-import os
+
+@st.cache_data
+def load_df(arquivo):
+    return pd.read_csv(arquivo)
+
+def image_to_base64(image):
+    from io import BytesIO
+    import base64
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode()
+
+def load_mobile(perfis_df):
+    for _, row in perfis_df.iterrows():
+        with st.container():
+            st.markdown('<div class="mobile-profile mobile-spacing">', unsafe_allow_html=True)
+            arquivo = './perfis/' + row["instagram"]+'.jpg'
+            try:
+                imagem = Image.open(arquivo)
+                st.markdown(
+                    f"""
+                    <a href='{row['url']}' target='_blank'>
+                        <img src='data:image/png;base64,{image_to_base64(imagem)}' 
+                                alt='{row["nome"]}' 
+                                class='clickable-image mobile-image'>
+                    </a>
+                    <p class='company-name'>{row["nome"]}</p>
+                    """,
+                    unsafe_allow_html=True
+                )
+            except Exception as e:
+                st.error(f"Erro ao carregar {arquivo}")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+def load_desktop(perfis_df):
+    cols = st.columns(4)
+    for idx, (_, row) in enumerate(perfis_df.iterrows()):
+        arquivo = './perfis/' + row["instagram"]+'.jpg'
+        with cols[idx % 4]:
+            try:
+                imagem = Image.open(arquivo)
+                st.markdown(
+                    f"""
+                    <div class="desktop-profile">
+                        <a href='{row['url']}' target='_blank'>
+                            <img src='data:image/png;base64,{image_to_base64(imagem)}' 
+                                    alt='{row["nome"]}' 
+                                    class='clickable-image desktop-image'>
+                        </a>
+                        <p class='company-name'>{row["nome"]}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            except Exception as e:
+                st.error(f"Erro ao carregar {arquivo}")    
 
 # Configuração da página
-st.set_page_config(
-    page_title="Encontro ALI Produtividade",
-    layout="wide",
-    page_icon="📸"
-)
+st.set_page_config(page_title="Encontro ALI Produtividade", layout="wide", page_icon="📸")
 
 # Aplicar CSS personalizado
 st.markdown(
@@ -145,82 +196,21 @@ st.markdown(
 
 # Título do aplicativo
 st.title("Encontro ALI Produtividade")
-st.markdown("<h3 style='color: var(--text-color); margin-bottom: 1rem;'>Perfis de Empresas no Instagram</h3>", unsafe_allow_html=True)
+st.markdown("<h3>Perfis de Empresas no Instagram</h3>", unsafe_allow_html=True)
 
 # Carregar dados
-@st.cache_data
-def carregar_dados():
-    return pd.read_csv("dados_perfis.csv")
-
-def image_to_base64(image):
-    from io import BytesIO
-    import base64
-    buffered = BytesIO()
-    image.save(buffered, format="PNG")
-    return base64.b64encode(buffered.getvalue()).decode()
-
 try:
-    perfis_df = carregar_dados()
-    
-    # Barra de pesquisa
-    with st.container():
-        st.markdown('<div class="search-container">', unsafe_allow_html=True)
-        termo_pesquisa = st.text_input("Pesquisar empresa...")
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    if termo_pesquisa:
-        perfis_df = perfis_df[perfis_df['nome'].str.contains(termo_pesquisa, case=False)]
-    
-    if len(perfis_df) == 0:
-        st.info("Nenhuma empresa encontrada com o termo de pesquisa.")
-    else:
-        # Verificar o tamanho da tela e mostrar apenas uma visualização
-        if st.session_state.get('is_mobile', False):
-            # Layout para mobile
-            for _, row in perfis_df.iterrows():
-                with st.container():
-                    st.markdown('<div class="mobile-profile mobile-spacing">', unsafe_allow_html=True)
-                    try:
-                        imagem = Image.open('./perfis/' + row["usuario"]+'.jpg')
-                        st.markdown(
-                            f"""
-                            <a href='{row['link']}' target='_blank'>
-                                <img src='data:image/png;base64,{image_to_base64(imagem)}' 
-                                     alt='{row["nome"]}' 
-                                     class='clickable-image mobile-image'>
-                            </a>
-                            <p class='company-name'>{row["nome"]}</p>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                    except Exception as e:
-                        st.error(f"Erro ao carregar {row['nome']}")
-                    st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            # Layout para desktop
-            cols = st.columns(4)
-            for idx, (_, row) in enumerate(perfis_df.iterrows()):
-                with cols[idx % 4]:
-                    try:
-                        imagem = Image.open('./perfis/' + row["usuario"]+'.jpg')
-                        st.markdown(
-                            f"""
-                            <div class="desktop-profile">
-                                <a href='{row['link']}' target='_blank'>
-                                    <img src='data:image/png;base64,{image_to_base64(imagem)}' 
-                                         alt='{row["nome"]}' 
-                                         class='clickable-image desktop-image'>
-                                </a>
-                                <p class='company-name'>{row["nome"]}</p>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                    except Exception as e:
-                        st.error(f"Erro ao carregar {row['nome']}")
+    perfis_df = load_df("dados_perfis.csv")
+except:
+    st.error("Verifique se 'dados_perfis.csv'.")
 
-except FileNotFoundError:
-    st.error("Arquivo de perfis não encontrado. Verifique se 'dados_perfis.csv' existe.")
+# Verificar o tamanho da tela e mostrar apenas uma visualização
+if st.session_state.get('is_mobile', False):
+    # Layout para mobile
+    load_mobile(perfis_df)
+else:
+    # Layout para desktop
+    load_desktop(perfis_df)
 
 # Créditos
 st.markdown(
@@ -231,15 +221,3 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-# Detectar se é mobile (simplificado)
-st.session_state.is_mobile = st.session_state.get('is_mobile', False)
-if not st.session_state.is_mobile:
-    try:
-        from streamlit.runtime.scriptrunner import get_script_run_ctx
-        ctx = get_script_run_ctx()
-        if ctx and hasattr(ctx, 'request'):
-            user_agent = ctx.request.headers.get('User-Agent', '').lower()
-            st.session_state.is_mobile = any(m in user_agent for m in ['mobile', 'android', 'iphone'])
-    except:
-        pass
